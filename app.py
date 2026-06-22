@@ -43,18 +43,21 @@ for p in ma_periods:
     ma = data['Close'].rolling(window=p).mean()
     fig.add_trace(go.Scatter(x=data['Timestamp'], y=ma, name=f'MA {p}', line=dict(width=1.5)))
 
+# Рассчитываем время для "бесконечной" линии (добавляем запас времени)
+last_time = data['Timestamp'].iloc[-1]
+future_time = last_time + pd.Timedelta(hours=int(INTERVALS[int_sel].replace('h', '').replace('m', '')) * 10)
+
 fig.update_layout(
     template="plotly_dark",
     height=750,
-    xaxis_rangeslider_visible=False,
-    # Переносим шкалу цен вправо (side="right")
     yaxis=dict(side="right", showgrid=True, gridcolor='#333'),
-    # Добавляем "линию цены" (линия от последней свечи)
     shapes=[
         dict(
             type="line",
-            x0=data['Timestamp'].iloc[0], x1=data['Timestamp'].iloc[-1],
-            y0=data['Close'].iloc[-1], y1=data['Close'].iloc[-1],
+            x0=data['Timestamp'].iloc[0], # Начинаем от самой первой свечи
+            x1=future_time,               # Уходим далеко вправо
+            y0=data['Close'].iloc[-1], 
+            y1=data['Close'].iloc[-1],
             line=dict(color="white", width=1, dash="dash")
         )
     ]
