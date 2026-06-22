@@ -13,17 +13,7 @@ CRYPTO_MAP = {
 }
 
 # Стандартные таймфреймы
-INTERVALS = {
-    '1ч': '1h', 
-    '4ч': '4h', 
-    '5ч': '5H', 
-    '8ч': '8H', 
-    '13ч': '13H', 
-    '18ч': '18H', 
-    '1д': '1D', 
-    '3д': '3D', 
-    '5д': '5D'
-}
+INTERVALS = {'5м': '5m', '15м': '15m', '30м': '30m', '1ч': '1h', '4ч': '4h', '1д': '1d'}
 
 col1, col2 = st.columns([1, 1])
 crypto_sel = col1.selectbox("Актив:", list(CRYPTO_MAP.keys()))
@@ -33,30 +23,16 @@ ma_input = st.sidebar.text_input("Периоды MA", "20,50,200")
 ma_periods = [int(p.strip()) for p in ma_input.split(',')]
 
 @st.cache_data(ttl=300)
-def get_custom_data(symbol, interval):
-    exchange = ccxt.okx()
+def get_data(symbol, interval):
+    exchange = ccxt.okx() # Используем стабильный OKX
     symbol = symbol.replace('/', '-')
-    
-    # Сначала грузим часовые данные (база)
-    bars = exchange.fetch_ohlcv(symbol, timeframe='1h', limit=1000)
+    # Увеличиваем лимит до 1000 для глубокого анализа
+    bars = exchange.fetch_ohlcv(symbol, timeframe=interval, limit=1000)
     df = pd.DataFrame(bars, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
-    df.set_index('Timestamp', inplace=True)
+    return df
 
-    # Если интервал стандартный (1ч, 4ч) — возвращаем сразу
-    if interval == '1h':
-        return df.reset_index()
-    if interval == '4h':
-        return df.resample('4H').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}).dropna().reset_index()
-
-    # Для сложных интервалов (5H, 8H, 13H, 18H, 3D, 5D)
-    # Pandas отлично понимает эти обозначения напрямую
-    agg_dict = {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}
-    resampled_df = df.resample(interval).agg(agg_dict).dropna()
-    
-    return resampled_df.reset_index()
-
-data = get_custom_data(CRYPTO_MAP[crypto_sel], INTERVALS[int_sel])
+data = get_data(CRYPTO_MAP[crypto_sel], INTERVALS[int_sel])
 
 # Отрисовка
 fig = go.Figure()
