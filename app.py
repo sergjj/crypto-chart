@@ -21,9 +21,10 @@ ma_periods = [int(p.strip()) for p in ma_input.split(',')]
 # Загрузка через Binance
 @st.cache_data(ttl=300)
 def get_binance_data(symbol, interval):
-    exchange = ccxt.binance({'enableRateLimit': True})
-    # Отключаем автоматическую загрузку всех рынков, чтобы не вызывать ошибку
-    # Просто запрашиваем данные напрямую
+    # Меняем биржу на OKX, она работает в облаке без проблем
+    exchange = ccxt.okx() 
+    # У OKX тикеры пишутся через дефис, как и у нас (BTC-USDT)
+    symbol = symbol.replace('/', '-') 
     bars = exchange.fetch_ohlcv(symbol, timeframe=interval, limit=100)
     df = pd.DataFrame(bars, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
