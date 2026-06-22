@@ -47,16 +47,27 @@ fig.update_layout(
     template="plotly_dark",
     height=750,
     xaxis_rangeslider_visible=False,
-    # Переносим шкалу цен вправо (side="right")
-    yaxis=dict(side="right", showgrid=True, gridcolor='#333'),
-    # Добавляем "линию цены" (линия от последней свечи)
-    shapes=[
-        dict(
-            type="line",
-            x0=data['Timestamp'].iloc[0], x1=data['Timestamp'].iloc[-1],
-            y0=data['Close'].iloc[-1], y1=data['Close'].iloc[-1],
-            line=dict(color="white", width=1, dash="dash")
-        )
-    ]
+    yaxis=dict(side="right"),
+    # Включаем "прицел" (Crosshair)
+    hovermode="x unified", # Показывает все данные в одной подсказке
+)
+
+# Добавляем "шипы" (Spikes) для осей
+fig.update_xaxes(
+    showspikes=True,
+    spikemode="across",
+    spikesnap="cursor",
+    spikecolor="gray",
+    spikethickness=1,
+    spikedash="dot"
+)
+
+fig.update_yaxes(
+    showspikes=True,
+    spikemode="across",
+    spikesnap="cursor",
+    spikecolor="gray",
+    spikethickness=1,
+    spikedash="dot"
 )
 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
