@@ -13,7 +13,18 @@ CRYPTO_MAP = {
 }
 
 # Стандартные таймфреймы
-INTERVALS = {'5м': '5m', '15м': '15m', '30м': '30m', '1ч': '1h', '4ч': '4h', '1д': '1d'}
+# ЗАМЕНИТЕ ВАШ ТЕКУЩИЙ INTERVALS НА ЭТОТ:
+INTERVALS = {
+    '1ч': '1h', 
+    '4ч': '4h', 
+    '5ч': '5H', 
+    '8ч': '8H', 
+    '13ч': '13H', 
+    '18ч': '18H', 
+    '1д': '1D', 
+    '3д': '3D', 
+    '5д': '5D'
+}
 
 col1, col2 = st.columns([1, 1])
 crypto_sel = col1.selectbox("Актив:", list(CRYPTO_MAP.keys()))
@@ -23,14 +34,26 @@ ma_input = st.sidebar.text_input("Периоды MA", "20,50,200")
 ma_periods = [int(p.strip()) for p in ma_input.split(',')]
 
 @st.cache_data(ttl=300)
-def get_data(symbol, interval):
-    exchange = ccxt.okx() # Используем стабильный OKX
+def get_custom_data(symbol, interval):
+    exchange = ccxt.okx()
     symbol = symbol.replace('/', '-')
-    # Увеличиваем лимит до 1000 для глубокого анализа
-    bars = exchange.fetch_ohlcv(symbol, timeframe=interval, limit=1000)
+    
+    # Сначала всегда грузим часовые данные как базу
+    bars = exchange.fetch_ohlcv(symbol, timeframe='1h', limit=1000)
     df = pd.DataFrame(bars, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
-    return df
+    df.set_index('Timestamp', inplace=True)
+
+    # Если интервал стандартный — возвращаем как есть
+    if interval in ['5m', '15m', '30m', '1h', '4h', '1d']:
+        return df.reset_index()
+
+    # Если ваш "хитрый" интервал (например, '5H' — 5 часов)
+    # Используем resample для группировки часовых свечей
+    agg_dict = {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}
+    resampled_df = df.resample(interval).agg(agg_dict).dropna()
+    
+    return resampled_df.reset_index()
 
 data = get_data(CRYPTO_MAP[crypto_sel], INTERVALS[int_sel])
 
