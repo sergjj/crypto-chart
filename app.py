@@ -43,5 +43,15 @@ for p in ma_periods:
     ma = data['Close'].rolling(window=p).mean()
     fig.add_trace(go.Scatter(x=data['Timestamp'], y=ma, name=f'MA {p}', line=dict(width=1.5)))
 
-fig.update_layout(template="plotly_dark", height=750, xaxis_rangeslider_visible=False)
+fig.update_layout(
+    template="plotly_dark",
+    height=750,
+    # Включаем слайдер, чтобы видеть все 1000 свечей
+    xaxis_rangeslider_visible=True, 
+    # Или, если слайдер не нужен, можно просто настроить диапазон:
+    xaxis=dict(
+        autorange=True,
+        rangeslider=dict(visible=False) # Оставьте False, если не хотите слайдер
+    )
+)
 st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': True})
