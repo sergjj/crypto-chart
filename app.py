@@ -13,10 +13,16 @@ CRYPTO_MAP = {
 }
 
 # Стандартные таймфреймы
-# Обновим список интервалов
 INTERVALS = {
-    '1ч': '1h', '4ч': '4h', '5ч': '5H', '8ч': '8H', 
-    '13ч': '13H', '18ч': '18H', '1д': '1D', '3д': '3D', '5д': '5D'
+    '1ч': '1h', 
+    '4ч': '4h', 
+    '5ч': '5H', 
+    '8ч': '8H', 
+    '13ч': '13H', 
+    '18ч': '18H', 
+    '1д': '1D', 
+    '3д': '3D', 
+    '5д': '5D'
 }
 
 col1, col2 = st.columns([1, 1])
@@ -31,18 +37,20 @@ def get_custom_data(symbol, interval):
     exchange = ccxt.okx()
     symbol = symbol.replace('/', '-')
     
-    # Сначала всегда грузим часовые данные как базу
+    # Сначала грузим часовые данные (база)
     bars = exchange.fetch_ohlcv(symbol, timeframe='1h', limit=1000)
     df = pd.DataFrame(bars, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
     df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
     df.set_index('Timestamp', inplace=True)
 
-    # Если интервал стандартный — возвращаем как есть
-    if interval in ['5m', '15m', '30m', '1h', '4h', '1d']:
+    # Если интервал стандартный (1ч, 4ч) — возвращаем сразу
+    if interval == '1h':
         return df.reset_index()
+    if interval == '4h':
+        return df.resample('4H').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}).dropna().reset_index()
 
-    # Если ваш "хитрый" интервал (например, '5H' — 5 часов)
-    # Используем resample для группировки часовых свечей
+    # Для сложных интервалов (5H, 8H, 13H, 18H, 3D, 5D)
+    # Pandas отлично понимает эти обозначения напрямую
     agg_dict = {'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}
     resampled_df = df.resample(interval).agg(agg_dict).dropna()
     
