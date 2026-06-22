@@ -48,7 +48,7 @@ def get_custom_data(symbol, interval):
     
     return resampled_df.reset_index()
 
-data = get_data(CRYPTO_MAP[crypto_sel], INTERVALS[int_sel])
+data = get_custom_data(CRYPTO_MAP[crypto_sel], INTERVALS[int_sel])
 
 # Отрисовка
 fig = go.Figure()
